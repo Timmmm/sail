@@ -1788,11 +1788,6 @@ and build_overload_tree_arg env (E_aux (aux, annot) as exp) =
     end
   | _ -> OT_leaf (exp, OL_unknown)
 
-let string_of_overload_leaf = function
-  | OL_app id -> ": " ^ string_of_id id ^ "(...)"
-  | OL_id id -> ": " ^ string_of_id id
-  | OL_unknown -> ": ?"
-
 let rec filter_overload_tree env =
   let atom_like id =
     let s = string_of_id id in
@@ -1886,16 +1881,6 @@ let rec overload_tree_to_exp env = function
       in
       (E_aux (E_app (id, List.rev args), annot), env)
   | OT_leaf (exp, _) -> (exp, env)
-
-let rec string_of_overload_tree depth =
-  let indent = String.make depth ' ' in
-  function
-  | OT_overloads (_, overloads, args, _) ->
-      indent
-      ^ Util.string_of_list ", " string_of_id overloads
-      ^ ("\n" ^ indent)
-      ^ Util.string_of_list ("\n" ^ indent) (string_of_overload_tree (depth + 4)) args
-  | OT_leaf (exp, leaf) -> indent ^ string_of_exp exp ^ string_of_overload_leaf leaf
 
 let crule r env exp typ =
   incr depth;

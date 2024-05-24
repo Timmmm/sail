@@ -116,8 +116,6 @@ let zencode_uid (id, ctyps) =
   | [] -> Util.zencode_string (string_of_id id)
   | _ -> Util.zencode_string (string_of_id id ^ "#" ^ Util.string_of_list "_" string_of_ctyp ctyps)
 
-let ctor_bindings = List.fold_left (fun map (id, ctyp) -> Bindings.add id ctyp map) Bindings.empty
-
 (**************************************************************************)
 (* 2. Converting sail types to C types                                    *)
 (**************************************************************************)
@@ -428,7 +426,7 @@ end) : CONFIG = struct
     | aval -> aval
 
   (* Map over all the functions in an aexp. *)
-  let rec analyze_functions ctx f (AE_aux (aexp, ({ env; loc = l; _ } as annot))) =
+  let rec analyze_functions ctx f (AE_aux (aexp, ({ env; _ } as annot))) =
     let ctx = { ctx with local_env = env } in
     let aexp =
       match aexp with
@@ -1483,7 +1481,7 @@ let codegen_type_def =
         c_function ~return:"static void" (sail_kill n "struct %s *op" n) [each_ctor "op->" (clear_field "op") tus]
       in
       let codegen_ctor (ctor_id, ctyp) =
-        let ctor_args, tuple, tuple_cleanup = (Printf.sprintf "%s op" (sgen_const_ctyp ctyp), empty, empty) in
+        let ctor_args, _tuple, tuple_cleanup = (Printf.sprintf "%s op" (sgen_const_ctyp ctyp), empty, empty) in
         c_function ~return:"static void"
           (ksprintf string "%s(%sstruct %s *rop, %s)" (sgen_function_id ctor_id) (extra_params ()) (sgen_id id)
              ctor_args
@@ -1685,7 +1683,6 @@ let codegen_list ctyp =
     in
 
     let codegen_list_equal =
-      let open Printf in
       let equal_hd = sail_equal (sgen_ctyp_name ctyp) "op1->hd, op2->hd" in
       let equal_tl = sail_equal (sgen_id id) "op1->tl, op2->tl" in
       c_function ~return:"static bool"
