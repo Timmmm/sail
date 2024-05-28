@@ -45,6 +45,7 @@
  (target ast.ml)
  (deps
   (:ast ast.lem))
+ (mode (promote (until-clean)))
  (action
   (progn
    (run lem -ocaml %{ast}))))
