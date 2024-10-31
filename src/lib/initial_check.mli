@@ -60,6 +60,9 @@ val opt_abstract_types : bool ref
     arguments are natural numbers. *)
 val opt_strict_bitvector : bool ref
 
+(** If enabled, allow parsing half-open intervals (e.g. `>..` as well as `..`). *)
+val opt_half_open_intervals : bool ref
+
 (** Generate faster undefined_T functions. Rather than generating
    functions that allow for the undefined values of enums and variants
    to be picked at runtime using a RNG or similar, this creates

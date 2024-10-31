@@ -50,6 +50,8 @@ let string_of_id_aux = function Id v -> v | Operator v -> v
 
 let string_of_id (Id_aux (id, _)) = string_of_id_aux id
 
+let string_of_ival ival = match ival with Ival_closed -> ".." | Ival_open_dec -> ">.." | Ival_open_inc -> "..<"
+
 let id_loc (Id_aux (_, l)) = l
 
 let starting_line_num l = match Reporting.simp_loc l with Some (s, _) -> Some s.pos_lnum | None -> None
@@ -666,7 +668,7 @@ let rec chunk_pat comments chunks (P_aux (aux, l)) =
   | P_vector_concat pats ->
       let pats = chunk_delimit ~get_loc:(fun (P_aux (_, l)) -> l) ~chunk:chunk_pat comments pats in
       Queue.add (Intersperse ("@", pats)) chunks
-  | P_vector_subrange (id, n, m) ->
+  | P_vector_subrange (id, n, ival, m) ->
       let id_chunks = Queue.create () in
       Queue.add (Atom (string_of_id id)) id_chunks;
       let ix_chunks = Queue.create () in
@@ -676,7 +678,7 @@ let rec chunk_pat comments chunks (P_aux (aux, l)) =
         Queue.add (Atom (Big_int.to_string n)) n_chunks;
         let m_chunks = Queue.create () in
         Queue.add (Atom (Big_int.to_string m)) m_chunks;
-        Queue.add (Binary (n_chunks, "..", m_chunks)) ix_chunks
+        Queue.add (Binary (n_chunks, string_of_ival ival, m_chunks)) ix_chunks
       );
       Queue.add (Index (id_chunks, ix_chunks)) chunks
   | P_typ (typ, pat) ->
@@ -955,12 +957,12 @@ let rec chunk_exp comments chunks (E_aux (aux, l)) =
       let exp_chunks = rec_chunk_exp exp in
       let ix_chunks = rec_chunk_exp ix in
       Queue.add (Index (exp_chunks, ix_chunks)) chunks
-  | E_vector_subrange (exp, ix1, ix2) ->
+  | E_vector_subrange (exp, ix1, ival, ix2) ->
       let exp_chunks = rec_chunk_exp exp in
       let ix1_chunks = rec_chunk_exp ix1 in
       let ix2_chunks = rec_chunk_exp ix2 in
       let ix_chunks = Queue.create () in
-      Queue.add (Binary (ix1_chunks, "..", ix2_chunks)) ix_chunks;
+      Queue.add (Binary (ix1_chunks, string_of_ival ival, ix2_chunks)) ix_chunks;
       Queue.add (Index (exp_chunks, ix_chunks)) chunks
   | E_for (var, from_index, to_index, step, order, body) ->
       let decreasing =
@@ -1042,12 +1044,12 @@ and chunk_vector_update comments (E_aux (aux, l) as exp) =
       let ix = rec_chunk_exp ix in
       let exp = rec_chunk_exp exp in
       (vec_chunks, Binary (ix, "=", exp) :: update)
-  | E_vector_update_subrange (vec, ix1, ix2, exp) ->
+  | E_vector_update_subrange (vec, ix1, ival, ix2, exp) ->
       let vec_chunks, update = chunk_vector_update comments vec in
       let ix1 = rec_chunk_exp ix1 in
       let ix2 = rec_chunk_exp ix2 in
       let exp = rec_chunk_exp exp in
-      (vec_chunks, Ternary (ix1, "..", ix2, "=", exp) :: update)
+      (vec_chunks, Ternary (ix1, string_of_ival ival, ix2, "=", exp) :: update)
   | _ ->
       let exp_chunks = Queue.create () in
       chunk_exp comments exp_chunks exp;

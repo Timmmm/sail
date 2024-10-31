@@ -186,6 +186,16 @@ let subrange_inc (list, n, m) =
   let m = Big_int.to_int m in
   take (m - (n - 1)) (drop n list)
 
+let subrange_open_dec (list, n, m) =
+  let n = Big_int.to_int n in
+  let m = Big_int.to_int m in
+  List.rev (take (n - m) (drop m (List.rev list)))
+
+let subrange_open_inc (list, n, m) =
+  let n = Big_int.to_int n in
+  let m = Big_int.to_int m in
+  take (m - n) (drop n list)
+
 let slice (list, n, m) =
   let n = Big_int.to_int n in
   let m = Big_int.to_int m in
@@ -222,6 +232,23 @@ let update_subrange_inc (xs, n, _, ys) =
     | y :: ys -> aux (update_inc (xs, o, y)) (Big_int.add o (Big_int.of_int 1)) ys
   in
   aux xs n ys
+
+let update_subrange_open_dec (xs, n, m, ys) =
+  let m = Big_int.to_int m in
+  let rec aux o xs =
+    match (o, xs) with
+    | 0, xs -> List.rev ys @ drop (Big_int.to_int n - m) xs
+    | o, x :: xs -> x :: aux (o - 1) xs
+    | _, [] -> []
+  in
+  List.rev (aux m (List.rev xs))
+
+let update_subrange_open_inc (xs, n, m, ys) =
+  let n = Big_int.to_int n in
+  let rec aux o xs =
+    match (o, xs) with 0, xs -> ys @ drop (Big_int.to_int m - n) xs | o, x :: xs -> x :: aux (o - 1) xs | _, [] -> []
+  in
+  aux n xs
 
 let vector_init (n, elem) = List.init (Big_int.to_int n) (fun _ -> elem)
 
@@ -319,8 +346,8 @@ let rec replicate_bits (bits, n) =
 let identity x = x
 
 (*
-Returns list of n bits of integer m starting from offset o >= 0 (bits numbered from least significant). 
-Uses twos-complement representation for m<0 and pads most significant bits in sign-extended way. 
+Returns list of n bits of integer m starting from offset o >= 0 (bits numbered from least significant).
+Uses twos-complement representation for m<0 and pads most significant bits in sign-extended way.
 Most significant bit is head of returned list.
  *)
 let rec get_slice_int' (n, m, o) =

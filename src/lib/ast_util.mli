@@ -470,6 +470,7 @@ val string_of_nexp : nexp -> string
 val string_of_typ : typ -> string
 val string_of_typ_arg : typ_arg -> string
 val string_of_typ_pat : typ_pat -> string
+val string_of_ival : interval -> string
 val string_of_n_constraint : n_constraint -> string
 val string_of_kinded_id : kinded_id -> string
 val string_of_quant_item : quant_item -> string
@@ -483,6 +484,7 @@ val string_of_pat : 'a pat -> string
 val string_of_mpat : 'a mpat -> string
 val string_of_letbind : 'a letbind -> string
 val string_of_index_range : index_range -> string
+val string_of_order : order -> string
 
 (** {1 Functions for getting identifiers from toplevel definitions} *)
 

@@ -209,13 +209,14 @@ let rec json_of_pat (P_aux (aux, _)) =
       `Assoc [pat_type "app"; ("id", `String (string_of_id id)); ("patterns", `List (List.map json_of_pat pats))]
   | P_vector pats -> seq_pat_json "vector" pats
   | P_vector_concat pats -> seq_pat_json "vector_concat" pats
-  | P_vector_subrange (id, n, m) ->
+  | P_vector_subrange (id, n, ival, m) ->
       `Assoc
         [
           pat_type "vector_subrange";
           ("id", `String (string_of_id id));
           ("from", `Int (Big_int.to_int n));
           ("to", `Int (Big_int.to_int m));
+          ("ival", `String (string_of_ival ival));
         ]
   | P_tuple pats -> seq_pat_json "tuple" pats
   | P_list pats -> seq_pat_json "list" pats

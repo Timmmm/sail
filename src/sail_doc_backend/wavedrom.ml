@@ -78,6 +78,21 @@ let binary_to_hex str =
   |> hexstring_of_bits |> Option.get
   |> Util.string_of_list "" (fun c -> String.make 1 c)
 
+(* Return a slice which make be half open as the equivalent closed version,
+   e.g. [3, 5) would be returned as [3, 4]. *)
+let slice_as_closed (i, ival, j) =
+    match ival with
+    | Ival_closed -> (i, j)
+    | Ival_open_dec -> (Big_int.pred i, j)
+    (* TODO (ival): double check this, and does it depend on the default order? *)
+    | Ival_open_inc -> (i, Big_int.pred j)
+
+let slice_width (i, ival, j) =
+  match ival with
+  | Ival_closed -> Big_int.succ(Big_int.sub i j)
+  | Ival_open_dec -> Big_int.sub i j
+  | Ival_open_inc -> Big_int.sub j i
+
 let rec wavedrom_elem_string size label (P_aux (aux, _)) =
   match aux with
   | P_id id ->
@@ -89,9 +104,10 @@ let rec wavedrom_elem_string size label (P_aux (aux, _)) =
       Printf.sprintf "    { bits: %d, name: 0x%s%s, type: 8 }" size (binary_to_hex bin) (wavedrom_label size label)
   | P_lit (L_aux (L_hex hex, _)) ->
       Printf.sprintf "    { bits: %d, name: 0x%s%s, type: 8 }" size hex (wavedrom_label size label)
-  | P_vector_subrange (_, n, m) when Big_int.equal n m ->
+  | P_vector_subrange (_, n, ival, m) when slice_width(n, ival, m) == Big_int.of_int(1) ->
       Printf.sprintf "    { bits: %d, name: '[%s]'%s, type: 3 }" size (Big_int.to_string n) (wavedrom_label size label)
-  | P_vector_subrange (id, n, m) ->
+  | P_vector_subrange (id, n, ival, m) ->
+      let (n, m) = slice_as_closed(n, ival, m) in
       Printf.sprintf "    { bits: %d, name: '%s[%s..%s]'%s, type: 3 }" size (string_of_id id) (Big_int.to_string n)
         (Big_int.to_string m) (wavedrom_label size label)
   | P_app (_, [P_aux (P_id arg, _)]) ->
