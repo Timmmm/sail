@@ -3,7 +3,6 @@
 import os
 import re
 import sys
-import hashlib
 import shutil
 
 
@@ -76,4 +75,3 @@ xml += '</testsuites>\n'
 output = open('tests.xml', 'w')
 output.write(xml)
 output.close()
-

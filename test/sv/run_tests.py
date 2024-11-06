@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 
 import os
-import re
 import sys
-import hashlib
 
 mydir = os.path.dirname(__file__)
 os.chdir(mydir)

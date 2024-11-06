@@ -3,7 +3,6 @@
 import os
 import re
 import sys
-import hashlib
 
 from shutil import which
 
