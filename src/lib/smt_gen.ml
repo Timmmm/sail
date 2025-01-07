@@ -904,6 +904,10 @@ module Make (Config : CONFIG) (Primop_gen : PRIMOP_GEN) = struct
         let* smt1 = smt_cval v1 in
         let* smt2 = smt_cval v2 in
         return (Extract (m - 1, 0, n + lbits_size, Fn ("concat", [Fn ("contents", [smt1]); smt2])))
+    | CT_fbits n, CT_lbits, CT_fbits m ->
+        let* smt1 = smt_cval v1 in
+        let* smt2 = smt_cval v2 in
+        return (Extract (m - 1, 0, n + lbits_size, Fn ("concat", [smt1; Fn ("contents", [smt2])])))
     | CT_lbits, CT_fbits n, CT_lbits ->
         let* smt1 = smt_cval v1 in
         let* smt2 = smt_cval v2 in
