@@ -553,7 +553,7 @@ module Make (Config : CONFIG) = struct
             | Some generator ->
                 let* value = generator args ret_ctyp in
                 singleton (define_const id ret_ctyp value)
-            | None -> failwith ("No generator " ^ string_of_id function_id)
+            | None -> raise (Reporting.err_general l ("No generator " ^ string_of_id function_id))
           )
         )
         else if extern && string_of_id function_id = "internal_vector_init" then singleton (declare_const id ret_ctyp)
