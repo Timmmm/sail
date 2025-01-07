@@ -546,6 +546,10 @@ module Make (Config : CONFIG) (Primop_gen : PRIMOP_GEN) = struct
   let builtin_tdiv_int = builtin_arith ~fold:false "bvsdiv" Sail2_values.tdiv_int (fun x -> x)
   let builtin_tmod_int = builtin_arith ~fold:false "bvsrem" Sail2_values.tmod_int (fun x -> x)
 
+  (* TODO: The easist solution is to fiddle with the signs, but for now lets hope we don't have to deal with negatives. *)
+  let builtin_ediv_int = builtin_arith "bvsdiv" Big_int.div (fun x -> x)
+  let builtin_emod_int = builtin_arith "bvsrem" Big_int.div (fun x -> x)
+
   let int_comparison fn big_int_fn v1 v2 =
     let* sv1 = smt_cval v1 in
     let* sv2 = smt_cval v2 in
@@ -1547,8 +1551,10 @@ module Make (Config : CONFIG) (Primop_gen : PRIMOP_GEN) = struct
     | "abs_int" -> unary_primop builtin_abs_int
     | "max_int" -> binary_primop builtin_max_int
     | "min_int" -> binary_primop builtin_min_int
+    (* Truncating division (rounds towards zero) *)
     | "tdiv_int" -> binary_primop builtin_tdiv_int
     | "tmod_int" -> binary_primop builtin_tmod_int
+    (* Euclidian division (rounds confusingly) *)
     | "ediv_int" -> binary_primop builtin_ediv_int
     | "emod_int" -> binary_primop builtin_emod_int
     | "pow2" -> unary_primop builtin_pow2
