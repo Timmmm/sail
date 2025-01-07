@@ -962,7 +962,7 @@ let rec sgen_cval = function
   | V_struct (fields, _) ->
       Printf.sprintf "{%s}"
         (Util.string_of_list ", " (fun (field, cval) -> zencode_id field ^ " = " ^ sgen_cval cval) fields)
-  | V_ctor_unwrap (f, ctor, _) -> Printf.sprintf "%s.%s" (sgen_cval f) (sgen_uid ctor)
+  | V_ctor_unwrap (f, ctor, _) -> Printf.sprintf "%s.variants.%s" (sgen_cval f) (sgen_uid ctor)
   | V_tuple _ -> Reporting.unreachable Parse_ast.Unknown __POS__ "Cannot generate C value for a tuple literal"
 
 and sgen_call op cvals =
@@ -1475,7 +1475,8 @@ let codegen_type_def =
         c_function ~return:"static void" (sail_create n "struct %s *op" n)
           ([string (Printf.sprintf "op->kind = Kind_%s;" (sgen_id ctor_id))]
           @
-          if not (is_stack_ctyp ctyp) then [sail_create ~suffix:";" (sgen_ctyp_name ctyp) "&op->%s" (sgen_id ctor_id)]
+          if not (is_stack_ctyp ctyp) then
+            [sail_create ~suffix:";" (sgen_ctyp_name ctyp) "&op->variants.%s" (sgen_id ctor_id)]
           else []
           )
       in
@@ -1485,7 +1486,7 @@ let codegen_type_def =
       in
       let clear_field v ctor_id ctyp =
         if is_stack_ctyp ctyp then None
-        else Some (sail_kill ~suffix:";" (sgen_ctyp_name ctyp) "&%s->%s" v (sgen_id ctor_id))
+        else Some (sail_kill ~suffix:";" (sgen_ctyp_name ctyp) "&%s->variants.%s" v (sgen_id ctor_id))
       in
       let codegen_clear =
         let n = sgen_id id in
@@ -1499,11 +1500,11 @@ let codegen_type_def =
           )
           ([each_ctor "rop->" (clear_field "rop") tus; string ("rop->kind = Kind_" ^ sgen_id ctor_id) ^^ semi]
           @
-          if is_stack_ctyp ctyp then [ksprintf string "rop->%s = op;" (sgen_id ctor_id)]
+          if is_stack_ctyp ctyp then [ksprintf string "rop->variants.%s = op;" (sgen_id ctor_id)]
           else
             [
-              sail_create ~suffix:";" (sgen_ctyp_name ctyp) "&rop->%s" (sgen_id ctor_id);
-              sail_copy ~suffix:";" (sgen_ctyp_name ctyp) "&rop->%s, op" (sgen_id ctor_id);
+              sail_create ~suffix:";" (sgen_ctyp_name ctyp) "&rop->variants.%s" (sgen_id ctor_id);
+              sail_copy ~suffix:";" (sgen_ctyp_name ctyp) "&rop->variants.%s, op" (sgen_id ctor_id);
             ]
           )
       in
@@ -1511,11 +1512,12 @@ let codegen_type_def =
         let n = sgen_id id in
         let set_field ctor_id ctyp =
           Some
-            ( if is_stack_ctyp ctyp then string (Printf.sprintf "rop->%s = op.%s;" (sgen_id ctor_id) (sgen_id ctor_id))
+            ( if is_stack_ctyp ctyp then
+                string (Printf.sprintf "rop->variants.%s = op.variants.%s;" (sgen_id ctor_id) (sgen_id ctor_id))
               else
-                sail_create ~suffix:";" (sgen_ctyp_name ctyp) "&rop->%s" (sgen_id ctor_id)
-                ^^ sail_copy ~prefix:" " ~suffix:";" (sgen_ctyp_name ctyp) "&rop->%s, op.%s" (sgen_id ctor_id)
-                     (sgen_id ctor_id)
+                sail_create ~suffix:";" (sgen_ctyp_name ctyp) "&rop->variants.%s" (sgen_id ctor_id)
+                ^^ sail_copy ~prefix:" " ~suffix:";" (sgen_ctyp_name ctyp) "&rop->variants.%s, op.variants.%s"
+                     (sgen_id ctor_id) (sgen_id ctor_id)
             )
         in
         c_function ~return:"static void"
@@ -1528,7 +1530,8 @@ let codegen_type_def =
       in
       let codegen_eq =
         let codegen_eq_test ctor_id ctyp =
-          c_return (sail_equal (sgen_ctyp_name ctyp) "op1.%s, op2.%s" (sgen_id ctor_id) (sgen_id ctor_id))
+          c_return
+            (sail_equal (sgen_ctyp_name ctyp) "op1.variants.%s, op2.variants.%s" (sgen_id ctor_id) (sgen_id ctor_id))
         in
         let rec codegen_eq_tests = function
           | [] -> c_return (string "false")
@@ -1559,7 +1562,7 @@ let codegen_type_def =
                   (separate space [string "enum"; string ("kind_" ^ sgen_id id); string "kind" ^^ semi]
                   ^^ hardline ^^ string "union" ^^ space
                   ^^ surround 2 0 lbrace (separate_map (semi ^^ hardline) codegen_tu tus ^^ semi) rbrace
-                  ^^ semi
+                  ^^ space ^^ string "variants" ^^ semi
                   )
                   rbrace
              ^^ semi;

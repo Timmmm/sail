@@ -29,9 +29,6 @@ def no_valgrind():
 def test_c(name, c_opts, sail_opts, valgrind, compiler='cc'):
     banner('Testing {} with C options: {} Sail options: {} valgrind: {}'.format(name, c_opts, sail_opts, valgrind))
     results = Results(name)
-    if compiler == 'c++':
-        # tl_pat.c:66:31: error: ‘zX::<unnamed union>::<unnamed struct>::zX’ has the same name as the class in which it is declared
-        results.expect_failure("tl_pat.sail", "same name as the class in which it is declared")
     if valgrind and no_valgrind():
         print('skipping because no valgrind found')
         return results.finish()
