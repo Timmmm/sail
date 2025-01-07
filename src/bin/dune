@@ -1,6 +1,6 @@
 (rule
  (target manifest.ml)
- (mode fallback)
+ (deps (universe))
  (action
   (with-outputs-to
    %{target}
