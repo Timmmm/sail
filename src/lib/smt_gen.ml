@@ -816,6 +816,8 @@ module Make (Config : CONFIG) (Primop_gen : PRIMOP_GEN) = struct
         return (Fn (op, [smt1; smt2]))
     | CT_lbits, CT_lbits, CT_lbits ->
         return (Fn ("Bits", [Fn ("len", [smt1]); Fn (op, [Fn ("contents", [smt1]); Fn ("contents", [smt2])])]))
+    | CT_lbits, CT_fbits n, CT_lbits ->
+        return (Fn ("Bits", [Fn ("len", [smt1]); Fn (op, [smt1; Fn ("contents", [smt2])])]))
     | _ -> builtin_type_error ("arith_bits " ^ op) [v1; v2] (Some ret_ctyp)
 
   let builtin_arith_bits_int op v1 v2 ret_ctyp =
