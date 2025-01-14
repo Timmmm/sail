@@ -65,6 +65,7 @@ let opt_splice : string list ref = ref []
 let opt_print_version = ref false
 let opt_require_version : string option ref = ref None
 let opt_memo_z3 = ref true
+let opt_memo_z3_path = ref "z3_problems"
 let opt_have_feature = ref None
 let opt_all_modules = ref false
 let opt_show_sail_dir = ref false
@@ -279,6 +280,7 @@ let rec options =
       ("-just_check", Arg.Set opt_just_check, " terminate immediately after typechecking");
       ("-memo_z3", Arg.Set opt_memo_z3, " memoize calls to z3, improving performance when typechecking repeatedly");
       ("-no_memo_z3", Arg.Clear opt_memo_z3, " do not memoize calls to z3 (default)");
+      ("-memo_z3_path", Arg.String (fun f -> opt_memo_z3_path := f), "path to cache z3 results (default 'z3_problems')");
       ( "-have_feature",
         Arg.String (fun symbol -> opt_have_feature := Some symbol),
         "<symbol> check if a feature symbol is set by default"
@@ -638,7 +640,7 @@ let main () =
 
   let default_target = register_default_target () in
 
-  if !opt_memo_z3 then Constraint.load_digests ();
+  if !opt_memo_z3 then Constraint.load_digests !opt_memo_z3_path;
 
   let ctx, ast, env, effect_info =
     match Target.get_the_target () with
@@ -646,7 +648,7 @@ let main () =
     | _ -> run_sail config default_target
   in
 
-  if !opt_memo_z3 then Constraint.save_digests ();
+  if !opt_memo_z3 then Constraint.save_digests !opt_memo_z3_path;
 
   if !opt_slice_instantiation_types then (
     let sail_dir = Reporting.get_sail_dir Locations.sail_dir in
@@ -684,5 +686,5 @@ let () =
     | Failure s -> raise (Reporting.err_general Parse_ast.Unknown s)
   with Reporting.Fatal_error e ->
     Reporting.print_error e;
-    if !opt_memo_z3 then Constraint.save_digests () else ();
+    if !opt_memo_z3 then Constraint.save_digests !opt_memo_z3_path else ();
     exit 1
