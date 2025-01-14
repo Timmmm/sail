@@ -277,8 +277,8 @@ let rec options =
       ("-strict_bitvector", Arg.Set Initial_check.opt_strict_bitvector, " require bitvectors to be indexed by naturals");
       ("-plugin", Arg.String (fun plugin -> load_plugin options plugin), "<file> load a Sail plugin");
       ("-just_check", Arg.Set opt_just_check, " terminate immediately after typechecking");
-      ("-memo_z3", Arg.Set opt_memo_z3, " memoize calls to z3, improving performance when typechecking repeatedly");
-      ("-no_memo_z3", Arg.Clear opt_memo_z3, " do not memoize calls to z3 (default)");
+      ("-memo_z3", Arg.Set opt_memo_z3, " memoize calls to z3, improving performance when typechecking repeatedly (default)");
+      ("-no_memo_z3", Arg.Clear opt_memo_z3, " do not memoize calls to z3");
       ( "-have_feature",
         Arg.String (fun symbol -> opt_have_feature := Some symbol),
         "<symbol> check if a feature symbol is set by default"
