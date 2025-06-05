@@ -1954,13 +1954,12 @@ module Codegen (Config : CODEGEN_CONFIG) = struct
       in
       let vector_init =
         c_function ~return:"static void"
-          (ksprintf string "vector_init_%s(%s *vec, sail_int n, %s elem)" (sgen_id id) (sgen_id id) (sgen_ctyp ctyp))
+          (ksprintf string "vector_init_%s(%s *vec, uint64_t n, %s elem)" (sgen_id id) (sgen_id id) (sgen_ctyp ctyp))
           [
             sail_kill ~suffix:";" (sgen_id id) "vec";
-            c_stmt "size_t m = (size_t)sail_int_get_ui(n)";
-            c_stmt "vec->len = m";
-            ksprintf c_stmt "vec->data = sail_new_array(%s, m)" (sgen_ctyp ctyp);
-            c_for (string "(size_t i = 0; i < m; i++)")
+            c_stmt "vec->len = n";
+            ksprintf c_stmt "vec->data = sail_new_array(%s, n)" (sgen_ctyp ctyp);
+            c_for (string "(size_t i = 0; i < n; i++)")
               ( if is_stack_ctyp ctx ctyp then [c_stmt "(vec->data)[i] = elem"]
                 else
                   [
@@ -2008,21 +2007,20 @@ module Codegen (Config : CODEGEN_CONFIG) = struct
       in
       let vector_update =
         c_function ~return:"static void"
-          (ksprintf string "vector_update_%s(%s *rop, %s op, sail_int n, %s elem)" (sgen_id id) (sgen_id id)
+          (ksprintf string "vector_update_%s(%s *rop, %s op, uint64_t n, %s elem)" (sgen_id id) (sgen_id id)
              (sgen_id id) (sgen_ctyp ctyp)
           )
           [
-            c_stmt "int m = sail_int_get_ui(n)";
             c_if_else (string "(rop->data == op.data)")
               [
-                ( if is_stack_ctyp ctx ctyp then c_stmt "rop->data[m] = elem"
-                  else sail_copy ~suffix:";" (sgen_ctyp_name ctyp) "(rop->data) + m, elem"
+                ( if is_stack_ctyp ctx ctyp then c_stmt "rop->data[n] = elem"
+                  else sail_copy ~suffix:";" (sgen_ctyp_name ctyp) "(rop->data) + n, elem"
                 );
               ]
               [
                 sail_copy ~suffix:";" (sgen_id id) "rop, op";
-                ( if is_stack_ctyp ctx ctyp then c_stmt "rop->data[m] = elem"
-                  else sail_copy ~suffix:";" (sgen_ctyp_name ctyp) "(rop->data) + m, elem"
+                ( if is_stack_ctyp ctx ctyp then c_stmt "rop->data[n] = elem"
+                  else sail_copy ~suffix:";" (sgen_ctyp_name ctyp) "(rop->data) + n, elem"
                 );
               ];
           ]
@@ -2040,12 +2038,12 @@ module Codegen (Config : CODEGEN_CONFIG) = struct
         if is_stack_ctyp ctx ctyp then
           c_function
             ~return:("static " ^ sgen_ctyp ctyp)
-            (ksprintf string "vector_access_%s(%s op, sail_int n)" (sgen_id id) (sgen_id id))
-            [c_stmt "int m = sail_int_get_ui(n)"; c_stmt "return op.data[m]"]
+            (ksprintf string "vector_access_%s(%s op, uint64_t n)" (sgen_id id) (sgen_id id))
+            [c_stmt "return op.data[n]"]
         else
           c_function ~return:"static void"
-            (ksprintf string "vector_access_%s(%s *rop, %s op, sail_int n)" (sgen_id id) (sgen_ctyp ctyp) (sgen_id id))
-            [c_stmt "int m = sail_int_get_ui(n)"; sail_copy ~suffix:";" (sgen_ctyp_name ctyp) "rop, op.data[m]"]
+            (ksprintf string "vector_access_%s(%s *rop, %s op, uint64_t n)" (sgen_id id) (sgen_ctyp ctyp) (sgen_id id))
+            [sail_copy ~suffix:";" (sgen_ctyp_name ctyp) "rop, op.data[n]"]
       in
       let internal_vector_init =
         c_function ~return:"static void"
@@ -2061,14 +2059,14 @@ module Codegen (Config : CODEGEN_CONFIG) = struct
       in
       let vector_undefined =
         c_function ~return:"static void"
-          (ksprintf string "undefined_vector_%s(%s *rop, sail_int len, %s elem)" (sgen_id id) (sgen_id id)
+          (ksprintf string "undefined_vector_%s(%s *rop, uint64_t len, %s elem)" (sgen_id id) (sgen_id id)
              (sgen_ctyp ctyp)
           )
           [
-            c_stmt "rop->len = sail_int_get_ui(len)";
-            ksprintf c_stmt "rop->data = sail_new_array(%s, rop->len)" (sgen_ctyp ctyp);
+            c_stmt "rop->len = len";
+            ksprintf c_stmt "rop->data = sail_new_array(%s, len)" (sgen_ctyp ctyp);
             c_for
-              (string "(int i = 0; i < (rop->len); i++)")
+              (string "(int i = 0; i < len; i++)")
               ( if is_stack_ctyp ctx ctyp then [c_stmt "(rop->data)[i] = elem"]
                 else
                   [
@@ -2091,9 +2089,9 @@ module Codegen (Config : CODEGEN_CONFIG) = struct
           ]
       in
       let vector_length =
-        c_function ~return:"static void"
-          (ksprintf string "length_%s(sail_int *rop, %s op)" (sgen_id id) (sgen_id id))
-          [c_stmt "mpz_set_ui(*rop, (unsigned long int)(op.len))"]
+        c_function ~return:"static uint64_t"
+          (ksprintf string "length_%s(%s op)" (sgen_id id) (sgen_id id))
+          [c_stmt "return op.len"]
       in
       begin
         generated := IdSet.add id !generated;
