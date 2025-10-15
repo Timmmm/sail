@@ -498,8 +498,6 @@ val big_int_of_nexp : nexp -> Big_int.num option
     use Type_error.check *)
 val check : Env.t -> untyped_ast -> typed_ast * Env.t
 
-val check_lazy : Env.t -> untyped_ast -> typed_lazy_ast * Env.t
-
 val check_defs : Env.t -> untyped_def list -> typed_def list * Env.t
 
 (** The same as [check], but exposes the intermediate type-checking environments so we don't have to always re-check the
