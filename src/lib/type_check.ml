@@ -5598,12 +5598,6 @@ let check : Env.t -> untyped_ast -> typed_ast * Env.t =
   let defs, env = check_defs_progress check_def 1 total env ast.defs in
   ({ ast with defs }, env)
 
-let check_lazy : Env.t -> untyped_ast -> typed_lazy_ast * Env.t =
- fun env ast ->
-  let total = List.length ast.defs in
-  let defs, env = check_defs_progress check_def_lazy 1 total env ast.defs in
-  ({ lazy_defs = defs; comments = ast.comments }, Env.open_all_modules env)
-
 let rec check_with_envs : Env.t -> untyped_def list -> (typed_def list * Env.t) list =
  fun env defs ->
   match defs with
