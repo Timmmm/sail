@@ -5533,6 +5533,29 @@ and check_def_lazy env def =
       let defs, env = check_def env def in
       (List.map (fun def -> Strict_def def) defs, env)
 
+(* Return a short human readable string hopefully identifying a definition
+   for debugging purposes. *)
+and name_of_def (DEF_aux (aux, _)) =
+  match aux with
+  | DEF_type td -> "type " ^ string_of_id (id_of_type_def td)
+  | DEF_constraint _ -> "constraint"
+  | DEF_fundef fd -> "fundef " ^ string_of_id (id_of_fundef fd)
+  | DEF_mapdef md -> "mapdef " ^ string_of_id (id_of_mapdef md)
+  | DEF_impl (FCL_aux (FCL_funcl (id, _), _)) -> "impl " ^ string_of_id id
+  | DEF_let _ -> "let"
+  | DEF_val vs -> "val " ^ string_of_id (id_of_val_spec vs)
+  | DEF_outcome _ -> "outcome"
+  | DEF_instantiation _ -> "instantiation"
+  | DEF_fixity _ -> "fixity"
+  | DEF_overload (id, _) -> "overload " ^ string_of_id id
+  | DEF_default _ -> "default"
+  | DEF_scattered sdef -> "scattered " ^ string_of_id (id_of_scattered sdef)
+  | DEF_measure _ -> "measure"
+  | DEF_loop_measures _ -> "loop_measures"
+  | DEF_register (DEC_aux (DEC_reg (_, id, _), _)) -> "register " ^ string_of_id id
+  | DEF_internal_mutrec _ -> "internal_mutrec"
+  | DEF_pragma (pragma, _) -> "pragma " ^ pragma
+
 and check_defs_progress :
     'a. (Env.t -> untyped_def -> 'a list * Env.t) -> int -> int -> Env.t -> untyped_def list -> 'a list * Env.t =
  fun checker n total env defs ->
@@ -5540,7 +5563,8 @@ and check_defs_progress :
     match defs with
     | [] -> (List.rev acc, env)
     | (DEF_aux (_, def_annot) as def) :: defs ->
-        Util.progress "Type check " (string_of_int n ^ "/" ^ string_of_int total) n total;
+        let def_description = name_of_def def in
+        Util.progress "Type check " def_description n total;
         let env, restore =
           if Option.is_some (get_def_attribute "global" def_annot) then (
             let env, state = Env.with_global_scope env in

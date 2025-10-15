@@ -511,6 +511,7 @@ val id_of_type_def_aux : type_def_aux -> id
 val id_of_type_def : 'a type_def -> id
 val id_of_val_spec : 'a val_spec -> id
 val id_of_dec_spec : 'a dec_spec -> id
+val id_of_scattered : 'a scattered_def -> id
 
 (** {2 Functions for manipulating identifiers} *)
 
