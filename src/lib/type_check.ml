@@ -5557,14 +5557,22 @@ and name_of_def (DEF_aux (aux, _)) =
   | DEF_pragma (pragma, _) -> "pragma " ^ pragma
 
 and check_defs_progress :
-    'a. (Env.t -> untyped_def -> 'a list * Env.t) -> int -> int -> Env.t -> untyped_def list -> 'a list * Env.t =
- fun checker n total env defs ->
+    'a.
+    ?source:string ->
+    (Env.t -> untyped_def -> 'a list * Env.t) ->
+    int ->
+    int ->
+    Env.t ->
+    untyped_def list ->
+    'a list * Env.t =
+ fun ?source checker n total env defs ->
+  let bar_description = match source with Some s -> "Type check " ^ s ^ " " | None -> "Type check " in
   let rec aux n total acc env defs =
     match defs with
     | [] -> (List.rev acc, env)
     | (DEF_aux (_, def_annot) as def) :: defs ->
-        let def_description = name_of_def def in
-        Util.progress "Type check " def_description n total;
+        let item_description = name_of_def def in
+        Util.progress bar_description item_description n total;
         let env, restore =
           if Option.is_some (get_def_attribute "global" def_annot) then (
             let env, state = Env.with_global_scope env in
@@ -5587,10 +5595,10 @@ and check_defs_progress :
   in
   aux n total [] env defs
 
-and check_defs : Env.t -> untyped_def list -> typed_def list * Env.t =
- fun env defs ->
+and check_defs : ?source:string -> Env.t -> untyped_def list -> typed_def list * Env.t =
+ fun ?source env defs ->
   let total = List.length defs in
-  check_defs_progress check_def 1 total env defs
+  check_defs_progress ?source check_def 1 total env defs
 
 let check : Env.t -> untyped_ast -> typed_ast * Env.t =
  fun env ast ->
