@@ -178,3 +178,104 @@ let warn_unused_variables (ast : Type_check.typed_ast) : unit =
         )
   end) in
   List.iter S.in_def ast.defs
+
+(* The type of an identifier, which dictates how it should be cased (snake, uppercase, etc). *)
+type id_type = IdType_Func | IdType_Map | IdType_Var | IdType_Type | IdType_Other
+
+let warn_identifier_case (ast : Type_check.typed_ast) : unit =
+  (* Check an ID is the right case (based on its type) and warn if not. *)
+  let scan_id id_type id =
+    begin
+      let name = string_of_id id in
+      let is_uppercase s = String.uppercase_ascii s = s in
+      let is_lowercase s = String.uppercase_ascii s = s in
+
+      let is_snake_case s = is_lowercase s in
+      let is_pascal_case s = String.capitalize_ascii s = s && not (String.contains s '_') in
+
+      match id_type with
+      | IdType_Func | IdType_Map ->
+          if not (is_snake_case name) then
+            Reporting.warn "Identifier case" (id_loc id)
+              ("Function and mapping identifiers should be in snake_case. Consider renaming '" ^ name ^ "'.")
+      | IdType_Var ->
+          if not (is_snake_case name) then
+            Reporting.warn "Identifier case" (id_loc id)
+              ("Variable identifiers should be in snake_case. Consider renaming '" ^ name ^ "'.")
+      | IdType_Type ->
+          if not (is_uppercase name) then
+            Reporting.warn "Identifier case" (id_loc id)
+              ("Type identifiers should be in UPPERCASE. Consider renaming '" ^ name ^ "'.")
+      | IdType_Other -> ()
+    end
+  in
+
+  let rec scan_exp (E_aux (aux, _)) = match aux with
+    | E_block exps -> List.iter scan_exp exps
+    | _ -> ()
+  in
+
+  let scan_funcl_pexp = None in
+
+  let scan_pexp (Pat_aux (aux, _)) =
+    match aux with
+    | Pat_exp (_, exp) -> scan_exp exp
+    | Pat_when (_, guard, exp) ->
+        scan_exp guard;
+        scan_exp exp
+  in
+
+  let scan_funcl (FCL_aux (FCL_funcl (_, pexp), _)) =
+    match scan_funcl_pexp with
+    | Some g -> (
+        match pexp with
+        | Pat_aux (Pat_exp (pat, exp), _) -> g pat None exp
+        | Pat_aux (Pat_when (pat, guard, exp), _) -> g pat (Some guard) exp
+      )
+    | None -> scan_pexp pexp
+  in
+
+  let scan_mpexp (MPat_aux (aux, _)) = match aux with MPat_when (_, exp) -> scan_exp exp | MPat_pat _ -> () in
+
+  let scan_mapcl (MCL_aux (aux, _)) =
+    match aux with
+    | MCL_forwards pexp | MCL_backwards pexp -> scan_pexp pexp
+    | MCL_bidir (left, right) ->
+        scan_mpexp left;
+        scan_mpexp right
+  in
+
+  let scan_scattered_def (SD_aux (aux, _)) =
+    match aux with
+    | SD_function _ | SD_unioncl _ | SD_variant _ | SD_internal_unioncl_record _ | SD_enumcl _ | SD_enum _
+    | SD_mapping _ | SD_end _ ->
+        ()
+    | SD_funcl funcl -> scan_funcl funcl
+    | SD_mapcl (_, mapcl) -> scan_mapcl mapcl
+  in
+
+  let scan_fundef (FD_aux (FD_function (_, _, funcls), _)) = List.iter scan_funcl funcls in
+
+  let scan_mapdef (MD_aux (MD_mapping (_, _, mapcls), _)) = List.iter scan_mapcl mapcls in
+
+  let rec scan_def (DEF_aux (aux, _)) =
+    match aux with
+    | DEF_type td -> scan_id IdType_Type (id_of_type_def td)
+    | DEF_fundef fd -> begin
+        scan_id IdType_Func (id_of_fundef fd);
+        scan_fundef fd
+      end
+    | DEF_mapdef md -> begin
+        scan_id IdType_Map (id_of_mapdef md);
+        scan_mapdef md
+      end
+    | DEF_let (LB_aux (LB_val (pat, _), _)) -> IdSet.iter (scan_id IdType_Var) (pat_ids pat)
+    | DEF_register (DEC_aux (DEC_reg (_, id, _), _)) -> scan_id IdType_Var id
+    | DEF_val vs -> scan_id IdType_Var (id_of_val_spec vs)
+    (* | DEF_internal_mutrec fds -> IdSet.of_list (List.map id_of_fundef fds) *)
+    (* | DEF_scattered sdef -> scan_id (id_of_scattered sdef) *)
+    | DEF_overload _ -> ()
+    | _ -> ()
+  in
+
+  List.iter scan_def ast.defs

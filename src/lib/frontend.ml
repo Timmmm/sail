@@ -53,12 +53,14 @@ module StringMap = Util.StringMap
 let opt_ddump_initial_ast = ref false
 let opt_ddump_side_effect = ref false
 let opt_ddump_tc_ast = ref false
+let opt_warn_identifier_case = ref false
 let opt_list_files = ref None
 let opt_reformat : string option ref = ref None
 
 let finalize_ast asserts_termination ctx env ast =
   Lint.warn_unmodified_variables ast;
   Lint.warn_unused_variables ast;
+  if !opt_warn_identifier_case then Lint.warn_identifier_case ast;
   let ast = Scattered.descatter env ast in
   let side_effects = Effects.infer_side_effects asserts_termination ast in
   if !opt_ddump_side_effect then Effects.dump_effects side_effects;

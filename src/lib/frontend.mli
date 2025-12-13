@@ -51,6 +51,7 @@ open Ast_util
 val opt_ddump_initial_ast : bool ref
 val opt_ddump_side_effect : bool ref
 val opt_ddump_tc_ast : bool ref
+val opt_warn_identifier_case : bool ref
 
 (** If [Some sep], then list the files included in the given sail_project file using [sep] as a separator. *)
 val opt_list_files : string option ref

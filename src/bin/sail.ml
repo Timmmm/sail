@@ -306,6 +306,10 @@ let rec options =
           [Arg.Unit (fun () -> Preprocess.add_symbol "STRICT_EXPONENTIALS"); Arg.Set Type_env.opt_strict_exponentials],
         " type level exponentials must have a non-negative argument"
       );
+      ( "-warn_identifier_case",
+        Arg.Set Frontend.opt_warn_identifier_case,
+        " warn about identifiers that do not follow the recommended naming conventions"
+      );
       ("-plugin", Arg.String (fun plugin -> load_plugin options plugin), "<file> load a Sail plugin");
       ("-just_check", Arg.Set opt_just_check, " terminate immediately after typechecking");
       ( "-memo_z3",

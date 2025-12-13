@@ -49,3 +49,5 @@ open Ast_defs
 val warn_unmodified_variables : ('a, 'b) ast -> unit
 
 val warn_unused_variables : Type_check.typed_ast -> unit
+
+val warn_identifier_case : Type_check.typed_ast -> unit
